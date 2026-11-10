@@ -39,6 +39,14 @@ curl localhost:8080/health     # should reply {"status":"ok"}
 
 Data is saved in `project-manager.db` in this folder.
 
+## Using it in a browser
+
+Once the app is running (either option), open <http://localhost:8080>.
+You can create, rename and delete projects, then open a project to add
+tasks, change their status, filter them and delete them. If something
+isn't allowed (for example, a blank name), the reason is shown at the top
+of the page.
+
 ## Running the tests
 
 ```bash

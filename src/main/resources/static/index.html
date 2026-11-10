@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Project Manager</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.classless.min.css">
+</head>
+<body>
+<header>
+    <h1>Project Manager</h1>
+</header>
+
+<main>
+    <p id="message" data-testid="message" role="alert" hidden></p>
+
+    <section>
+        <h2>Projects</h2>
+        <form id="project-form" data-testid="project-form">
+            <fieldset role="group">
+                <input name="name" placeholder="Project name" aria-label="Project name" data-testid="project-name-input">
+                <input name="description" placeholder="Description (optional)" aria-label="Description" data-testid="project-description-input">
+                <button type="submit" data-testid="create-project-button">Create</button>
+            </fieldset>
+        </form>
+        <p id="no-projects" data-testid="no-projects" hidden>No projects yet.</p>
+        <table data-testid="project-list">
+            <tbody id="project-rows"></tbody>
+        </table>
+    </section>
+
+    <section id="tasks-section" data-testid="tasks-section" hidden>
+        <h2>Tasks for "<span id="selected-project-name" data-testid="selected-project-name"></span>"</h2>
+
+        <form id="filter-form" data-testid="filter-form">
+            <fieldset role="group">
+                <select name="status" aria-label="Filter by status" data-testid="status-filter">
+                    <option value="">All statuses</option>
+                </select>
+                <select name="priority" aria-label="Filter by priority" data-testid="priority-filter">
+                    <option value="">All priorities</option>
+                </select>
+            </fieldset>
+        </form>
+
+        <form id="task-form" data-testid="task-form">
+            <fieldset role="group">
+                <input name="title" placeholder="Task title" aria-label="Task title" data-testid="task-title-input">
+                <select name="priority" aria-label="Priority" data-testid="task-priority-input"></select>
+                <input name="dueDate" type="date" aria-label="Due date" data-testid="task-due-date-input">
+                <button type="submit" data-testid="add-task-button">Add</button>
+            </fieldset>
+        </form>
+
+        <p id="no-tasks" data-testid="no-tasks" hidden>No tasks to show.</p>
+        <table data-testid="task-list">
+            <thead>
+            <tr>
+                <th>Title</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Due</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody id="task-rows"></tbody>
+        </table>
+    </section>
+</main>
+
+<script>
+    const STATUSES = ["TODO", "IN_PROGRESS", "DONE"];
+    const PRIORITIES = ["LOW", "MEDIUM", "HIGH"];
+
+    let selectedProject = null;
+
+    const $ = (id) => document.getElementById(id);
+
+    // Builds an element. Strings passed as children are inserted as plain text, never as HTML.
+    function el(tag, attrs = {}, ...children) {
+        const node = document.createElement(tag);
+        for (const [key, value] of Object.entries(attrs)) {
+            if (key.startsWith("on")) node.addEventListener(key.slice(2), value);
+            else node.setAttribute(key, value);
+        }
+        node.append(...children);
+        return node;
+    }
+
+    async function api(method, path, body) {
+        const response = await fetch(path, {
+            method,
+            headers: body ? {"Content-Type": "application/json"} : {},
+            body: body ? JSON.stringify(body) : undefined,
+        });
+        if (response.status === 204) return null;
+        const data = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(data?.error ?? `Request failed (${response.status})`);
+        return data;
+    }
+
+    function showError(text) {
+        $("message").textContent = text;
+        $("message").hidden = false;
+    }
+
+    function clearError() {
+        $("message").hidden = true;
+        $("message").textContent = "";
+    }
+
+    // Runs an API action, showing any error message from the server at the top of the page.
+    async function run(action) {
+        try {
+            await action();
+            clearError();
+        } catch (error) {
+            showError(error.message);
+        }
+    }
+
+    // ---- Projects ----
+
+    async function loadProjects() {
+        const projects = await api("GET", "/api/projects");
+        $("no-projects").hidden = projects.length > 0;
+        $("project-rows").replaceChildren(...projects.map(projectRow));
+    }
+
+    function projectRow(project) {
+        return el("tr", {"data-testid": "project-row", "data-project-id": project.id},
+            el("td", {"data-testid": "project-name"}, project.name),
+            el("td", {"data-testid": "project-description"}, project.description ?? ""),
+            el("td", {},
+                el("button", {"data-testid": "open-project-button", onclick: () => selectProject(project)}, "Open"),
+                " ",
+                el("button", {"data-testid": "rename-project-button", onclick: () => renameProject(project)}, "Rename"),
+                " ",
+                el("button", {"data-testid": "delete-project-button", onclick: () => deleteProject(project)}, "Delete")));
+    }
+
+    async function createProject(event) {
+        event.preventDefault();
+        const form = event.target;
+        await run(async () => {
+            await api("POST", "/api/projects", {
+                name: form.elements.name.value,
+                description: form.elements.description.value || null,
+            });
+            form.reset();
+            await loadProjects();
+        });
+    }
+
+    async function renameProject(project) {
+        const name = prompt("New name for the project:", project.name);
+        if (name === null) return;
+        await run(async () => {
+            const updated = await api("PATCH", `/api/projects/${project.id}`, {name});
+            if (selectedProject?.id === project.id) selectProject(updated);
+            await loadProjects();
+        });
+    }
+
+    async function deleteProject(project) {
+        if (!confirm(`Delete "${project.name}" and all of its tasks?`)) return;
+        await run(async () => {
+            await api("DELETE", `/api/projects/${project.id}`);
+            if (selectedProject?.id === project.id) {
+                selectedProject = null;
+                $("tasks-section").hidden = true;
+            }
+            await loadProjects();
+        });
+    }
+
+    // ---- Tasks ----
+
+    async function selectProject(project) {
+        selectedProject = project;
+        $("selected-project-name").textContent = project.name;
+        $("tasks-section").hidden = false;
+        await run(loadTasks);
+    }
+
+    async function loadTasks() {
+        const filters = $("filter-form");
+        const query = new URLSearchParams();
+        if (filters.elements.status.value) query.set("status", filters.elements.status.value);
+        if (filters.elements.priority.value) query.set("priority", filters.elements.priority.value);
+        const tasks = await api("GET", `/api/projects/${selectedProject.id}/tasks?${query}`);
+        $("no-tasks").hidden = tasks.length > 0;
+        $("task-rows").replaceChildren(...tasks.map(taskRow));
+    }
+
+    function taskRow(task) {
+        const statusSelect = el("select", {
+                "aria-label": "Status",
+                "data-testid": "task-status-select",
+                onchange: (event) => changeStatus(task, event.target.value),
+            },
+            ...STATUSES.map((status) => el("option", {value: status}, status)));
+        statusSelect.value = task.status;
+
+        return el("tr", {"data-testid": "task-row", "data-task-id": task.id},
+            el("td", {"data-testid": "task-title"}, task.title),
+            el("td", {}, statusSelect),
+            el("td", {"data-testid": "task-priority"}, task.priority),
+            el("td", {"data-testid": "task-due-date"}, task.dueDate ?? "—"),
+            el("td", {},
+                el("button", {"data-testid": "delete-task-button", onclick: () => deleteTask(task)}, "Delete")));
+    }
+
+    async function addTask(event) {
+        event.preventDefault();
+        const form = event.target;
+        await run(async () => {
+            const body = {title: form.elements.title.value, priority: form.elements.priority.value};
+            if (form.elements.dueDate.value) body.dueDate = form.elements.dueDate.value;
+            await api("POST", `/api/projects/${selectedProject.id}/tasks`, body);
+            form.reset();
+            form.elements.priority.value = "MEDIUM";
+            await loadTasks();
+        });
+    }
+
+    async function changeStatus(task, status) {
+        await run(async () => {
+            await api("PATCH", `/api/tasks/${task.id}`, {status});
+        });
+        await run(loadTasks);
+    }
+
+    async function deleteTask(task) {
+        await run(async () => {
+            await api("DELETE", `/api/tasks/${task.id}`);
+            await loadTasks();
+        });
+    }
+
+    // ---- Start up ----
+
+    function fillOptions(select, values) {
+        select.append(...values.map((value) => el("option", {value}, value)));
+    }
+
+    fillOptions($("filter-form").elements.status, STATUSES);
+    fillOptions($("filter-form").elements.priority, PRIORITIES);
+    fillOptions($("task-form").elements.priority, PRIORITIES);
+    $("task-form").elements.priority.value = "MEDIUM";
+
+    $("project-form").addEventListener("submit", createProject);
+    $("task-form").addEventListener("submit", addTask);
+    $("filter-form").addEventListener("change", () => run(loadTasks));
+
+    run(loadProjects);
+</script>
+</body>
+</html>
