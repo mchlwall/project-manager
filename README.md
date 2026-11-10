@@ -4,13 +4,9 @@
 
 A well-tested project management tool for personal use.
 
-It keeps a list of **projects**, and each project has **tasks**. Everything is
-done through a web API (a set of web addresses that accept and return data),
-and the data is saved in a single file on disk (an SQLite database).
+It keeps a list of **projects**, and each project has **tasks**. Everything is done through a web API (a set of web addresses that accept and return data), and the data is saved in a single file on disk (an SQLite database).
 
-The badge above shows whether the automatic build and tests passed on the
-latest version of the code: green means everything passed, red means
-something broke.
+The badge above shows whether the automatic build and tests passed on the latest version of the code: green means everything passed, red means something broke.
 
 ## Running it
 
@@ -39,14 +35,18 @@ curl localhost:8080/health     # should reply {"status":"ok"}
 
 Data is saved in `project-manager.db` in this folder.
 
+## Using it in a browser
+
+Once the app is running (either option), open <http://localhost:8080>. 
+You can create, rename and delete projects, then open a project to add tasks, change their status, filter them and delete them. If something isn't allowed (for example, a blank name), the reason is shown at the top of the page.
+
 ## Running the tests
 
 ```bash
 ./mvnw test
 ```
 
-Test reports are written to `target/surefire-reports/`. The same tests run
-automatically on GitHub for every pull request and every change to `main`.
+Test reports are written to `target/surefire-reports/`. The same tests run automatically on GitHub for every pull request and every change to `main`.
 
 ## What the API does
 
