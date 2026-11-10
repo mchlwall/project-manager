@@ -147,3 +147,16 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# Java / Maven
+target/
+*.class
+.idea/
+*.iml
+.vscode/
+
+# SQLite
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
