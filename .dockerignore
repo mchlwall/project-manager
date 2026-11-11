@@ -6,6 +6,7 @@
 mvnw
 mvnw.cmd
 target
+api-tests
 data
 *.db
 *.db-*
