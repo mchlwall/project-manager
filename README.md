@@ -48,6 +48,16 @@ You can create, rename and delete projects, then open a project to add tasks, ch
 
 Test reports are written to `target/surefire-reports/`. The same tests run automatically on GitHub for every pull request and every change to `main`.
 
+### API tests
+
+A separate suite in [`api-tests/`](api-tests/README.md) checks the API from the outside by sending real requests to a running app:
+
+```bash
+./mvnw -f api-tests/pom.xml test   # needs the app running on localhost:8080
+```
+
+See [api-tests/README.md](api-tests/README.md) for suites, writing tests, test data cleanup and reports.
+
 ## What the API does
 
 All data is sent and received as JSON. Errors always come back as
