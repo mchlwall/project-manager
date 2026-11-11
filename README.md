@@ -6,7 +6,7 @@ A well-tested project management tool for personal use.
 
 It keeps a list of **projects**, and each project has **tasks**. Everything is done through a web API (a set of web addresses that accept and return data), and the data is saved in a single file on disk (an SQLite database).
 
-The badge above shows whether the automatic build and tests passed on the latest version of the code: green means everything passed, red means something broke.
+The badge above shows whether the automatic build and tests (including the API tests) passed on the latest version of the code: green means everything passed, red means something broke. The latest API test report is at <https://mchlwall.github.io/project-manager/>.
 
 ## Running it
 
@@ -50,13 +50,15 @@ Test reports are written to `target/surefire-reports/`. The same tests run autom
 
 ### API tests
 
-A separate suite in [`api-tests/`](api-tests/README.md) checks the API from the outside by sending real requests to a running app:
+A separate suite in [`api-tests/`](api-tests/README.md) checks the API from the outside by sending real requests to a running app. Quick start:
 
 ```bash
-./mvnw -f api-tests/pom.xml test   # needs the app running on localhost:8080
+docker compose up --build -d --wait           # start the app
+./api-tests/scripts/run-suite.sh smoke        # run the smoke suite (or: projects, all)
+./mvnw -f api-tests/pom.xml allure:serve      # open the test report in your browser
 ```
 
-See [api-tests/README.md](api-tests/README.md) for suites, writing tests, test data cleanup and reports.
+See [api-tests/README.md](api-tests/README.md) for suites, writing tests, test data cleanup and reports, and the [triage runbook](api-tests/docs/triage-runbook.md) when tests fail.
 
 ## What the API does
 

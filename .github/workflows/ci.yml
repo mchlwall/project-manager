@@ -100,6 +100,29 @@ jobs:
           path: api-tests/target/surefire-reports/*.xml
           reporter: java-junit
 
+      - name: Package the Allure report for GitHub Pages (main only)
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: api-tests/target/site/allure-maven-plugin/
+
+  publish-api-test-report:
+    name: Publish the API test report to GitHub Pages
+    needs: api-tests
+    # Only for main, and also when tests failed (that's when the report is most useful)
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && (needs.api-tests.result == 'success' || needs.api-tests.result == 'failure') }}
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write # publish to GitHub Pages
+      id-token: write # prove to Pages that this workflow is allowed to publish
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Publish the report
+        id: deploy
+        uses: actions/deploy-pages@v5
+
   docker:
     name: Check the Docker image builds
     needs: test # only runs if the tests passed

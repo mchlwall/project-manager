@@ -62,4 +62,6 @@ The first Allure command downloads Node.js and Allure into `api-tests/.allure/`,
 
 ## CI
 
-The `api-tests` job in `.github/workflows/ci.yml` runs after the unit tests. It starts the app with Docker Compose and runs `verify`, which fails on any test failure or unformatted code. The Allure report is uploaded as the `api-test-reports` artifact, and results appear on the PR as "API Tests".
+When tests fail, see the [triage runbook](docs/triage-runbook.md).
+
+The `api-tests` job in `.github/workflows/ci.yml` runs after the unit tests. It starts the app with Docker Compose and runs `verify`, which fails on any test failure or unformatted code. The Allure report is uploaded as the `api-test-reports` artifact, and results appear on the PR as "API Tests". On `main`, the report is also published to GitHub Pages, even when tests fail, at <https://mchlwall.github.io/project-manager/>.
