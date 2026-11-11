@@ -4,14 +4,14 @@
 # Suites are JUnit @Tag names; "all" runs every test. Add new suites to the list below.
 set -euo pipefail
 
-SUITE="${1:?Usage: $0 <smoke|unit|all> [extra maven args]}"
+SUITE="${1:?Usage: $0 <smoke|projects|unit|all> [extra maven args]}"
 shift
 
 case "$SUITE" in
   all) TAG_ARGS=() ;;
-  smoke | unit) TAG_ARGS=("-Dgroups=$SUITE") ;;
+  smoke | projects | unit) TAG_ARGS=("-Dgroups=$SUITE") ;;
   *)
-    echo "Unknown suite '$SUITE'. Known suites: smoke, unit, all" >&2
+    echo "Unknown suite '$SUITE'. Known suites: smoke, projects, unit, all" >&2
     exit 1
     ;;
 esac

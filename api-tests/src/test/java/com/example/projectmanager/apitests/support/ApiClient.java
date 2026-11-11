@@ -1,5 +1,6 @@
 package com.example.projectmanager.apitests.support;
 
+import com.example.projectmanager.apitests.config.Endpoints;
 import com.example.projectmanager.apitests.config.TestConfig;
 import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.RestAssured;
@@ -12,7 +13,8 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Tests must send every request through this class, never RestAssured directly, so each call is attached to the
- * Allure report and logged by {@link ResponseLoggingExtension} when a test fails. Argument order is:
+ * Allure report and logged by {@link ResponseLoggingExtension} when a test fails. Every project created through it
+ * is deleted by {@link TestDataListener} when the run finishes. Argument order is:
  * {@code (endpoint, body?, pathParams...)}.
  */
 public class ApiClient {
@@ -42,7 +44,11 @@ public class ApiClient {
 
     public Response post(String endpoint, Object body, Object... pathParams) {
         log.info("POST {}{}", baseUrl, endpoint);
-        return remember(jsonRequest(body).post(endpoint, pathParams), body);
+        Response response = jsonRequest(body).post(endpoint, pathParams);
+        if (Endpoints.PROJECTS.equals(endpoint) && response.statusCode() == 201) {
+            TestDataListener.track(response.path("id"));
+        }
+        return remember(response, body);
     }
 
     public Response patch(String endpoint, Object body, Object... pathParams) {
