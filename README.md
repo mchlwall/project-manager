@@ -37,7 +37,15 @@ Data is saved in `project-manager.db` in this folder.
 
 ## Using it in a browser
 
-Once the app is running (either option), open <http://localhost:8080>. 
+The quickest way is one command, which starts the app, waits until it's ready and opens <http://localhost:8080> for you:
+
+```bash
+./scripts/start.sh             # with Docker (stop with: docker compose down)
+./scripts/start.sh java        # with Java (stop with Ctrl+C)
+```
+
+If the app is already running (either option), just open <http://localhost:8080>.
+
 You can create, rename and delete projects, then open a project to add tasks, change their status, filter them and delete them. If something isn't allowed (for example, a blank name), the reason is shown at the top of the page.
 
 ## Running the tests
