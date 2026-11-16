@@ -26,7 +26,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
-    baseURL: 'http://localhost:8080',
+    baseURL: 'http://localhost:8081',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -73,8 +73,10 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-       command: 'docker compose up --build -d',
-  //   url: 'http://localhost:3000',
-  //   reuseExistingServer: !process.env.CI,
+    command: 'rm -rf .data && docker compose -p project-manager-e2e up --build',
+    url: 'http://localhost:8081/health',
+    reuseExistingServer: !process.env.CI,
+    timeout: 180_000, // first Docker build can take a few minutes
+    env: { APP_PORT: '8081', DATA_DIR: './e2e/.data' },
   },
 });
