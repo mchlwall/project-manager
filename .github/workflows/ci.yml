@@ -158,6 +158,14 @@ jobs:
           name: playwright-report
           path: e2e/playwright-report/
 
+      - name: Show E2E test results in GitHub
+        if: ${{ !cancelled() }}
+        uses: dorny/test-reporter@v2
+        with:
+          name: E2E Tests
+          path: e2e/junit-results/junit.xml
+          reporter: java-junit
+  
   docker:
     name: Check the Docker image builds
     needs: test # only runs if the tests passed
