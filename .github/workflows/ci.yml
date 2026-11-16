@@ -123,6 +123,41 @@ jobs:
         id: deploy
         uses: actions/deploy-pages@v5
 
+  e2e-tests:
+    name: Run E2E tests against the running app
+    needs: test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: e2e # the Playwright tests live in their own folder
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v5
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm # reuse downloaded packages between runs
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Install Playwright
+        run: npm ci
+
+      - name: Install the Chromium browser
+        run: npx playwright install --with-deps chromium
+
+      # Playwright starts the app itself in Docker (see webServer in playwright.config.ts)
+      - name: Run the E2E tests
+        run: npx playwright test
+
+      - name: Save the Playwright report (downloadable from the run page)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+
   docker:
     name: Check the Docker image builds
     needs: test # only runs if the tests passed
