@@ -2,11 +2,16 @@
 # its tests whenever code changes, so problems are caught before they're merged.
 name: CI
 
-# When this runs: every push to main, and every pull request.
+# When this runs: every push to main, every pull request, and nightly.
+# The nightly run is what makes alerting useful: nobody is watching it, so a
+# failure there opens a GitHub issue (see the last step of the e2e-tests job).
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch: # manual "Run workflow" button / `gh workflow run CI`
+  schedule:
+    - cron: "0 9 * * 1,3,5" # 09:00 UTC Mon, Wed & Fri
 
 # What this workflow is allowed to do in the repo (as little as possible).
 permissions:
@@ -127,6 +132,10 @@ jobs:
     name: Run E2E tests against the running app
     needs: test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      issues: write
     defaults:
       run:
         working-directory: e2e # the Playwright tests live in their own folder
@@ -152,6 +161,7 @@ jobs:
         run: npx playwright test
 
       - name: Save the Playwright report (downloadable from the run page)
+        id: upload-report
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
@@ -165,6 +175,34 @@ jobs:
           name: E2E Tests
           path: e2e/junit-results/junit.xml
           reporter: java-junit
+
+      # Alert: on cron & open an issue. If one is already open, comment on it instead
+      # so a failure that persists for days doesn't create a pile of issues.
+      - name: Open a GitHub issue about the failure
+        if: ${{ failure() && github.event_name != 'pull_request' }}
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REPORT_URL: ${{ steps.upload-report.outputs.artifact-url }}
+          TRIGGER: ${{ github.event_name }}
+          SHA: ${{ github.sha }}
+        run: |
+          body="E2E tests failed (trigger: \`$TRIGGER\`, commit: \`${SHA:0:7}\`).
+
+          - Run: $RUN_URL
+          - Playwright report (download, then \`npx playwright show-report\`): ${REPORT_URL:-see the run page}"
+
+          gh label create e2e-failure --color B60205 \
+            --description "Scheduled or main-branch E2E failure" 2>/dev/null || true
+
+          existing=$(gh issue list --label e2e-failure --state open --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --label e2e-failure \
+              --title "E2E tests failing on $(date -u +%F)" --body "$body"
+          fi
   
   docker:
     name: Check the Docker image builds

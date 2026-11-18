@@ -54,7 +54,7 @@ You can create, rename and delete projects, then open a project to add tasks, ch
 ./mvnw test
 ```
 
-Test reports are written to `target/surefire-reports/`. The same tests run automatically on GitHub for every pull request and every change to `main`.
+Test reports are written to `target/surefire-reports/`. The same tests run automatically on GitHub for every pull request and every change to `main`. CI also runs Mon, Wed & Fri at 09:00 UTC; if the E2E tests fail on that run or on `main`, a GitHub issue labelled `e2e-failure` is opened (or commented on if one is already open).
 
 ### API tests
 
