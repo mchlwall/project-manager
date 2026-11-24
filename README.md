@@ -4,15 +4,15 @@
 
 A well-tested project management tool for personal use.
 
-It keeps a list of **projects**, and each project has **tasks**. Everything is done through a web API (a set of web addresses that accept and return data), and the data is saved in a single file on disk (an SQLite database).
+It keeps a list of **projects**, and each project has **tasks**. Everything is done through a web API and the data is saved in a single file on disk (an SQLite database).
 
 The badge above shows whether the automatic build and tests (including the API tests) passed on the latest version of the code: green means everything passed, red means something broke. The latest API test report is at <https://mchlwall.github.io/project-manager/>.
 
 ## Running it
 
-There are two ways. Pick one.
+There are two ways - Docker || Java
 
-### Option 1: With Docker (nothing else to install)
+### Option 1: With Docker
 
 Needs [Docker](https://docs.docker.com/get-docker/) or Rancher Desktop running.
 
@@ -24,7 +24,7 @@ docker compose down            # stop it (your data is kept)
 
 Data is saved in the `data/` folder of this repo. Delete that folder to start fresh.
 
-### Option 2: With Java on your machine
+### Option 2: With Java
 
 Needs Java 21 installed.
 
