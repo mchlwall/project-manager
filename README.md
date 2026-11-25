@@ -101,3 +101,18 @@ curl -X POST localhost:8080/api/projects \
   -H 'Content-Type: application/json' \
   -d '{"name":"Garden","description":"Spring jobs"}'
 ```
+
+### E2E tests
+
+A Playwright suite in [`e2e/`](e2e/README.md) tests the full application in a real browser. Quick start:
+
+```bash
+cd e2e
+npm install
+npx playwright install
+npx playwright test
+```
+
+*(Requires [Docker](https://docs.docker.com/get-docker/) running so Playwright can start the app automatically.)*
+
+See [e2e/README.md](e2e/README.md) for interactive UI mode, debugging, and setup details.
